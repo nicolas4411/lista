@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tarefas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e0ebf1;
+            margin: 0;
+            padding: 20px;
+        }
+
+        
+        #formTarefa {
+            margin-bottom: 20px;
+        }
+
+        #containerTarefas {
+            background: #fff;
+            border: 10px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .tarefa {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tarefa:last-child {
+            border-bottom: none;
+        }
+
+        .acoes-tarefa {
+            margin-top: 10px;
+        }
+
+        .botao-confirmar,
+        .botao-editar,
+        .botao-salvar,
+        .botao-excluir {
+            background-color: #2517e2;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .botao-editar:hover,
+        .botao-excluir:hover,
+        .botao-salvar:hover,
+        .botao-confirmar:hover {
+            background-color: #0056b3;
+        }
+
+        .botao-confirmar.verde {
+            background-color: green;
+        }
+
+        .input-valor {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .input-valor input {
+            width: 100px;
+        }
+
+        @media (max-width: 600px) {
+            input, button {
+                width: 100%;
+                margin: 5px 0;
+            }
+            .tarefa {
+                padding: 10px;
+                font-size: 14px;
+            }
+            .acoes-tarefa {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .acoes-tarefa button {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <form id="formTarefa">
+        <h2>Adicionar Item</h2>
+        <input type="text" id="inputTarefa" placeholder="Digite um Item" required>
+        <button type="submit">Adicionar Item</button>
+    </form>
+
+    <div id="tarefas">
+        <h2>Item</h2>
+        <div id="containerTarefas">
+            <!-- Tarefas serão exibidas aqui -->
+        </div>
+        <h3>Total: R$ <span id="totalValor">0.00</span></h3>
+    </div>
+
+    <script>
+        // Array para armazenar as tarefas
+        const tarefas = [];
+
+        // Função para carregar e exibir tarefas
+        function carregarTarefas() {
+            const containerTarefas = document.getElementById('containerTarefas');
+            containerTarefas.innerHTML = ''; // Limpa o conteúdo atual
+
+            tarefas.forEach(tarefa => {
+                const elementoTarefa = document.createElement('div');
+                elementoTarefa.className = 'tarefa';
+                elementoTarefa.innerHTML = `
+                    <div class="conteudo-tarefa">
+                        <strong>Tarefa:</strong> ${tarefa.descricao} - 
+                        <strong>Valor Unitário:</strong> R$ <span class="valor">${tarefa.valor.toFixed(2)}</span>
+                        <div class="input-valor" data-id="${tarefa.id}">
+                            Quantidade: <input type="number" class="quantidade-input" min="1" value="${tarefa.quantidade}" style="width: 60px;">
+                            <input type="number" class="valor-input" step="0.01" placeholder="Digite um valor" value="${tarefa.valor}">
+                            <button class="botao-salvar">Atualizar</button>
+                        </div>
+                    </div>
+                    <div class="acoes-tarefa">
+                        <button class="botao-editar" data-id="${tarefa.id}">Editar</button>
+                        <button class="botao-excluir" data-id="${tarefa.id}">Excluir</button>
+                        <button class="botao-confirmar" data-id="${tarefa.id}">Preço</button>
+                    </div>
+                `;
+                containerTarefas.appendChild(elementoTarefa);
+            });
+
+            // Atualiza o valor total
+            atualizarTotal();
+
+            // Adiciona manipuladores de eventos para os botões
+            document.querySelectorAll('.botao-excluir').forEach(botao => {
+                botao.addEventListener('click', function () {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    const index = tarefas.findIndex(t => t.id === id);
+                    if (index > -1) {
+                        tarefas.splice(index, 1); // Remove a tarefa do array
+                        carregarTarefas(); // Atualiza a lista de tarefas
+                    }
+                });
+            });
+
+            document.querySelectorAll('.botao-editar').forEach(botao => {
+                botao.addEventListener('click', function () {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    const tarefa = tarefas.find(t => t.id === id);
+                    const novaDescricao = prompt('Editar tarefa:', tarefa.descricao);
+                    if (novaDescricao && novaDescricao.trim() !== '') {
+                        tarefa.descricao = novaDescricao.trim(); // Atualiza a descrição da tarefa
+                        carregarTarefas(); // Atualiza a lista de tarefas
+                    }
+                });
+            });
+
+            document.querySelectorAll('.botao-confirmar').forEach(botao => {
+                botao.addEventListener('click', function () {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    const inputValor = document.querySelector(`.input-valor[data-id="${id}"]`);
+                    const valorInput = inputValor.querySelector('.valor-input');
+                    const quantidadeInput = inputValor.querySelector('.quantidade-input');
+
+                    if (this.classList.contains('verde')) {
+                        this.classList.remove('verde'); // Remove a classe verde
+                        inputValor.style.display = 'none'; // Esconde o campo de valor
+                    } else {
+                        this.classList.add('verde'); // Adiciona a classe verde
+                        inputValor.style.display = 'block'; // Mostra o campo de valor
+                    }
+
+                    // Adiciona manipulador de evento para o botão de salvar valor
+                    inputValor.querySelector('.botao-salvar').addEventListener('click', function () {
+                        const novaQuantidade = parseInt(quantidadeInput.value);
+                        const novoValor = parseFloat(valorInput.value.trim());
+                        if (!isNaN(novoValor) && !isNaN(novaQuantidade)) {
+                            const tarefa = tarefas.find(t => t.id === id);
+                            tarefa.valor = novoValor; // Atualiza o valor da tarefa
+                            tarefa.quantidade = novaQuantidade; // Atualiza a quantidade da tarefa
+                            carregarTarefas(); // Atualiza a lista de tarefas
+                        }
+                    });
+                });
+            });
+        }
+
+        // Função para atualizar o valor total
+        function atualizarTotal() {
+            const totalValor = tarefas.reduce((total, tarefa) => total + (tarefa.valor * tarefa.quantidade), 0);
+            document.getElementById('totalValor').textContent = totalValor.toFixed(2);
+        }
+
+        // Carregar tarefas quando a página for carregada
+        window.onload = function () {
+            carregarTarefas();
+        };
+
+        // Manipulador de envio de formulário
+        document.getElementById('formTarefa').addEventListener('submit', function (evento) {
+            evento.preventDefault();
+            const descricao = document.getElementById('inputTarefa').value.trim();
+            if (descricao) {
+                const novaTarefa = {
+                    id: tarefas.length ? tarefas[tarefas.length - 1].id + 1 : 1,
+                    descricao: descricao,
+                    valor: 0.00, // Inicialmente o valor é 0.00
+                    quantidade: 0 // Quantidade inicial é 1
+                };
+                tarefas.push(novaTarefa); // Adiciona a nova tarefa ao array
+                carregarTarefas(); // Atualiza a lista de tarefas
+                this.reset(); // Limpa o formulário
+            }
+        });
+    </script>
+</body>
+
+</html>
